@@ -1,64 +1,53 @@
-int tempo = 0;
-const int entrada = 0x01;
-const int saida = 0x00;
-const int Alta = 0x01;
-const int Baixa = 0x00;
-const int delay = 200;
-const int delayTroca = 500;
-const int DelayLuzes = 500;
-const int delayBancada = 1000;
-void main() {
-    CMCON = 7; //Desabilita o comparador de tensão
+#define BOTAO GP0_bit
+#define LUZES GP1_bit
+#define BANCADA GP2_bit
+#define IN 0x01      //PINOS DE ENTRADA E LIGADO
+#define OUT 0X00     //PINOS DE SAIDA E DESLIGADO
+
+long tempo=0;
+
+void iniciarPortas(){
+    CMCON = 7; //Desabilita o comparador de tensÃ£o
     ANSEL = 0; //Desabilita entradas analogicas
+    TRISIO.GP0 = IN; //Definido como entrada
+    TRISIO.GP1 = OUT; //Definido como saida
+    TRISIO.GP2 = OUT; //Definido como saida
+    BOTAO = IN; //GP0 BOTAO
+    LUZES = OUT; //GP1 LUZES
+    BANCADA = OUT;
+}
 
-    TRISIO.GP0 = entrada; //Definido como entrada
-    TRISIO.GP1 = saida; //Definido como saida
-    TRISIO.GP2 = saida; //Definido como saida
-    // TRISIO.GP3  = saida;         //Definido como saida
-    //TRISIO.GP4  = saida;         //Definido como saida
-    //  TRISIO.GP5  = saida;         //Definido como saida
+
+void delay(int espera){
+      VDelay_Advanced_ms(espera,Get_Fosc_kHz());
+}
+
+int timer(){
+     tempo=0;
+     while(!BOTAO){
+     delay(1);
+     tempo++; 
+         if(tempo>500){
+                 BANCADA=!BANCADA;
+                 return 1;
+         }
+     }
+     return 0;
+}
 
 
-    GP0_bit = Alta; //GP0 inicia em nível lógico alto
-    GP1_bit = Baixa; //Todos os demais pinos iniciarão em nível lógico baixo
-    GP2_bit = Baixa;
-    //GP3_bit    = Baixa;
-    //GP4_bit    = Baixa;
-    // GP5_bit    = Baixa;
+void main(){
+     iniciarPortas();
+     while(1){
+              if(!BOTAO){
+                 if(timer()){
+                   delay(500);
+                   continue;
+                 }else{
+                      LUZES=!LUZES;
+                 }
 
-    do {
-        while (GP0_bit == Baixa) {
-            tempo += delay;
-            delay_ms(delay);
-            if (tempo <= DelayLuzes && GP0_bit == Alta) {
-                if (GP1_bit == Baixa) {
-                    GP1_bit = Alta;
-                    tempo = 0;
-                } else {
-                    if (GP1_bit == Alta) {
-                        GP1_bit = Baixa;
-                        tempo = 0;
-                    }
-                }
-            } else {
-                if (tempo >= delayBancada) {
-                    if (GP2_bit == Baixa) {
-                        GP2_bit = Alta;
-                        tempo = 0;
-                    } else {
-                        if (GP2_bit == Alta) {
-                            GP2_bit = Baixa;
-                            tempo = 0;
-                        }
-                    }
-                    delay_ms(delayTroca);
+              }
 
-                }
-
-            }
-
-        }
-        tempo = 0;
-
-    } while (1);
+      }
 }
